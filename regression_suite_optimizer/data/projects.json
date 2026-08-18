@@ -1,0 +1,393 @@
+{
+ "projects": {
+  "602a371c0d11": {
+   "id": "602a371c0d11",
+   "name": "new",
+   "created": "2026-08-09 12:15:16",
+   "files": [
+    {
+     "name": "new_requirements.pdf",
+     "doc_type": "Requirement Document",
+     "text": "Employee Policy v2\nEligibility Requirements\nMinimum employee age is 23 years.\nEmployees must complete onboarding training within 30 days.\nWork Arrangement\nEmployees may work remotely up to 3 days per week.\nAll employees must enable multi-factor authentication.\n",
+     "chars": 261,
+     "preview": "Employee Policy v2\nEligibility Requirements\nMinimum employee age is 23 years.\nEmployees must complete onboarding training within 30 days.\nWork Arrangement\nEmployees may work remotely up to 3 days per week.\nAll employees must enable multi-factor authentication.\n",
+     "pages_estimate": 1,
+     "uploaded_at": "2026-08-09 12:15:26"
+    }
+   ],
+   "requirements": [
+    {
+     "id": "REQ-001",
+     "text": "Minimum employee age is 23 years.",
+     "module": "Eligibility Requirements",
+     "source": "new_requirements.pdf",
+     "type": "Functional"
+    },
+    {
+     "id": "REQ-002",
+     "text": "Employees must complete onboarding training within 30 days.",
+     "module": "Eligibility Requirements",
+     "source": "new_requirements.pdf",
+     "type": "Functional"
+    },
+    {
+     "id": "REQ-003",
+     "text": "All employees must enable multi-factor authentication.",
+     "module": "Work Arrangement",
+     "source": "new_requirements.pdf",
+     "type": "Functional"
+    }
+   ],
+   "test_cases": [
+    {
+     "id": "TC-001",
+     "module": "Eligibility Requirements",
+     "requirement_ref": "REQ-001",
+     "requirement_description": "Minimum employee age is 23 years.",
+     "user_story_ref": "US-001",
+     "scenario": "Verify that: Minimum employee age is 23 years.",
+     "test_objective": "Validate functional regression behavior for the 'Eligibility Requirements' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Log in with a valid user for the module.",
+      "Navigate to the Eligibility Requirements area.",
+      "Perform the action described in the requirement with valid inputs.",
+      "Observe the system behavior and any confirmation shown."
+     ],
+     "test_data": "As specified in the linked requirement.",
+     "expected_result": "The system behaves exactly as stated in the requirement; correct data is persisted/displayed.",
+     "priority": "Medium",
+     "severity": "Medium",
+     "category": "Functional Regression",
+     "regression_impact": "Medium",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-001 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-002",
+     "module": "Eligibility Requirements",
+     "requirement_ref": "REQ-001",
+     "requirement_description": "Minimum employee age is 23 years.",
+     "user_story_ref": "US-001",
+     "scenario": "Negative \u2014 attempt the operation with invalid input/state for: Minimum employee age is 23 years.",
+     "test_objective": "Validate negative scenario behavior for the 'Eligibility Requirements' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Navigate to the Eligibility Requirements area.",
+      "Attempt the operation with invalid, missing, or unauthorized input.",
+      "Observe the error handling."
+     ],
+     "test_data": "Invalid/malformed values; unauthorized user where applicable.",
+     "expected_result": "The system rejects the operation with a clear, user-friendly error message; no partial data is saved.",
+     "priority": "Medium",
+     "severity": "Medium",
+     "category": "Negative Scenario",
+     "regression_impact": "Medium",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-001 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-003",
+     "module": "Eligibility Requirements",
+     "requirement_ref": "REQ-001",
+     "requirement_description": "Minimum employee age is 23 years.",
+     "user_story_ref": "US-001",
+     "scenario": "Boundary values for: Minimum employee age is 23 years.",
+     "test_objective": "Validate boundary value behavior for the 'Eligibility Requirements' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Identify the numeric/length limits in the requirement.",
+      "Test at limit-1, limit, and limit+1.",
+      "Verify behavior at each boundary."
+     ],
+     "test_data": "limit-1 / limit / limit+1 for each stated bound.",
+     "expected_result": "Values at and below the limit are accepted; values beyond the limit are rejected with a message.",
+     "priority": "Medium",
+     "severity": "Medium",
+     "category": "Boundary Value",
+     "regression_impact": "Medium",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-001 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-004",
+     "module": "Eligibility Requirements",
+     "requirement_ref": "REQ-002",
+     "requirement_description": "Employees must complete onboarding training within 30 days.",
+     "user_story_ref": "US-002",
+     "scenario": "Verify that: Employees must complete onboarding training within 30 days.",
+     "test_objective": "Validate functional regression behavior for the 'Eligibility Requirements' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Log in with a valid user for the module.",
+      "Navigate to the Eligibility Requirements area.",
+      "Perform the action described in the requirement with valid inputs.",
+      "Observe the system behavior and any confirmation shown."
+     ],
+     "test_data": "As specified in the linked requirement.",
+     "expected_result": "The system behaves exactly as stated in the requirement; correct data is persisted/displayed.",
+     "priority": "High",
+     "severity": "High",
+     "category": "Functional Regression",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-002 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-005",
+     "module": "Eligibility Requirements",
+     "requirement_ref": "REQ-002",
+     "requirement_description": "Employees must complete onboarding training within 30 days.",
+     "user_story_ref": "US-002",
+     "scenario": "Negative \u2014 attempt the operation with invalid input/state for: Employees must complete onboarding training within 30 days.",
+     "test_objective": "Validate negative scenario behavior for the 'Eligibility Requirements' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Navigate to the Eligibility Requirements area.",
+      "Attempt the operation with invalid, missing, or unauthorized input.",
+      "Observe the error handling."
+     ],
+     "test_data": "Invalid/malformed values; unauthorized user where applicable.",
+     "expected_result": "The system rejects the operation with a clear, user-friendly error message; no partial data is saved.",
+     "priority": "High",
+     "severity": "High",
+     "category": "Negative Scenario",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-002 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-006",
+     "module": "Eligibility Requirements",
+     "requirement_ref": "REQ-002",
+     "requirement_description": "Employees must complete onboarding training within 30 days.",
+     "user_story_ref": "US-002",
+     "scenario": "Boundary values for: Employees must complete onboarding training within 30 days.",
+     "test_objective": "Validate boundary value behavior for the 'Eligibility Requirements' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Identify the numeric/length limits in the requirement.",
+      "Test at limit-1, limit, and limit+1.",
+      "Verify behavior at each boundary."
+     ],
+     "test_data": "limit-1 / limit / limit+1 for each stated bound.",
+     "expected_result": "Values at and below the limit are accepted; values beyond the limit are rejected with a message.",
+     "priority": "High",
+     "severity": "High",
+     "category": "Boundary Value",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-002 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-007",
+     "module": "Work Arrangement",
+     "requirement_ref": "REQ-003",
+     "requirement_description": "All employees must enable multi-factor authentication.",
+     "user_story_ref": "US-003",
+     "scenario": "Verify that: All employees must enable multi-factor authentication.",
+     "test_objective": "Validate functional regression behavior for the 'Work Arrangement' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Log in with a valid user for the module.",
+      "Navigate to the Work Arrangement area.",
+      "Perform the action described in the requirement with valid inputs.",
+      "Observe the system behavior and any confirmation shown."
+     ],
+     "test_data": "As specified in the linked requirement.",
+     "expected_result": "The system behaves exactly as stated in the requirement; correct data is persisted/displayed.",
+     "priority": "High",
+     "severity": "High",
+     "category": "Functional Regression",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-003 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-008",
+     "module": "Work Arrangement",
+     "requirement_ref": "REQ-003",
+     "requirement_description": "All employees must enable multi-factor authentication.",
+     "user_story_ref": "US-003",
+     "scenario": "Negative \u2014 attempt the operation with invalid input/state for: All employees must enable multi-factor authentication.",
+     "test_objective": "Validate negative scenario behavior for the 'Work Arrangement' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Navigate to the Work Arrangement area.",
+      "Attempt the operation with invalid, missing, or unauthorized input.",
+      "Observe the error handling."
+     ],
+     "test_data": "Invalid/malformed values; unauthorized user where applicable.",
+     "expected_result": "The system rejects the operation with a clear, user-friendly error message; no partial data is saved.",
+     "priority": "High",
+     "severity": "High",
+     "category": "Negative Scenario",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "REQ-003 (new_requirements.pdf)"
+    },
+    {
+     "id": "TC-009",
+     "module": "Eligibility Requirements + Work Arrangement",
+     "requirement_ref": "N/A",
+     "requirement_description": "Cross-module / suite-level check \u2014 not tied to a single requirement.",
+     "user_story_ref": "N/A",
+     "scenario": "Integration \u2014 data flows correctly between Eligibility Requirements and Work Arrangement",
+     "test_objective": "Validate integration behavior for the 'Eligibility Requirements + Work Arrangement' module against the stated requirement.",
+     "preconditions": "Application is accessible and test user is available.",
+     "steps": [
+      "Complete a transaction in Eligibility Requirements.",
+      "Verify the resulting state/data is reflected in Work Arrangement.",
+      "Check audit/log entries for the handoff."
+     ],
+     "test_data": "As specified in the linked requirement.",
+     "expected_result": "Data is consistent across both modules with no manual intervention.",
+     "priority": "High",
+     "severity": "High",
+     "category": "Integration",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "Cross-module"
+    },
+    {
+     "id": "TC-010",
+     "module": "End-to-End",
+     "requirement_ref": "N/A",
+     "requirement_description": "Cross-module / suite-level check \u2014 not tied to a single requirement.",
+     "user_story_ref": "N/A",
+     "scenario": "E2E \u2014 complete primary business flow across all modules: Eligibility Requirements, Work Arrangement",
+     "test_objective": "Validate end-to-end behavior for the 'End-to-End' module against the stated requirement.",
+     "preconditions": "Clean environment; all integrations up.",
+     "steps": [
+      "Start from a clean state as a new user.",
+      "Execute the primary business journey touching each module in sequence.",
+      "Verify final state, notifications, and reports."
+     ],
+     "test_data": "As specified in the linked requirement.",
+     "expected_result": "The full journey completes without errors and all module states are consistent.",
+     "priority": "High",
+     "severity": "High",
+     "category": "End-to-End",
+     "regression_impact": "High",
+     "automation_candidate": "Yes",
+     "traceability": "Cross-module"
+    }
+   ],
+   "report": {
+    "total_requirements": 3,
+    "total_test_cases": 10,
+    "functional_count": 3,
+    "non_functional_count": 0,
+    "coverage_percent": 100.0,
+    "priorities": {
+     "High": 7,
+     "Medium": 3,
+     "Low": 0
+    },
+    "categories": {
+     "Functional Regression": 3,
+     "Negative Scenario": 3,
+     "Boundary Value": 2,
+     "Integration": 1,
+     "End-to-End": 1
+    },
+    "modules": {
+     "Eligibility Requirements": {
+      "requirements": 2,
+      "test_cases": 6,
+      "covered": 2
+     },
+     "Work Arrangement": {
+      "requirements": 1,
+      "test_cases": 2,
+      "covered": 1
+     },
+     "Eligibility Requirements + Work Arrangement": {
+      "requirements": 0,
+      "test_cases": 1,
+      "covered": 0
+     },
+     "End-to-End": {
+      "requirements": 0,
+      "test_cases": 1,
+      "covered": 0
+     }
+    },
+    "traceability": [
+     {
+      "requirement_id": "REQ-001",
+      "requirement": "Minimum employee age is 23 years.",
+      "module": "Eligibility Requirements",
+      "source": "new_requirements.pdf",
+      "test_case_ids": [
+       "TC-001",
+       "TC-002",
+       "TC-003"
+      ],
+      "covered": true
+     },
+     {
+      "requirement_id": "REQ-002",
+      "requirement": "Employees must complete onboarding training within 30 days.",
+      "module": "Eligibility Requirements",
+      "source": "new_requirements.pdf",
+      "test_case_ids": [
+       "TC-004",
+       "TC-005",
+       "TC-006"
+      ],
+      "covered": true
+     },
+     {
+      "requirement_id": "REQ-003",
+      "requirement": "All employees must enable multi-factor authentication.",
+      "module": "Work Arrangement",
+      "source": "new_requirements.pdf",
+      "test_case_ids": [
+       "TC-007",
+       "TC-008"
+      ],
+      "covered": true
+     }
+    ],
+    "alerts": []
+   },
+   "engine": "demo",
+   "duplicates_skipped": 0,
+   "duplicate_examples": [],
+   "business_rules": [],
+   "risk": {
+    "score": 24.5,
+    "level": "Medium"
+   },
+   "insights": {
+    "high_risk_modules": [
+     "Work Arrangement",
+     "Eligibility Requirements + Work Arrangement",
+     "End-to-End"
+    ],
+    "missing_coverage": [],
+    "duplicate_test_cases": [],
+    "untested_requirements": [],
+    "recommended_regression_areas": [
+     "Eligibility Requirements",
+     "Work Arrangement",
+     "Eligibility Requirements + Work Arrangement"
+    ],
+    "suggested_additional_test_cases": [],
+    "business_rule_conflicts": [],
+    "requirement_gaps": []
+   },
+   "impact": null,
+   "assumptions": [],
+   "history": [
+    {
+     "timestamp": "2026-08-09 12:15:31",
+     "requirements": 3,
+     "test_cases": 10,
+     "coverage_percent": 100.0
+    }
+   ]
+  }
+ }
+}

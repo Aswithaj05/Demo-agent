@@ -1,0 +1,19 @@
+Functional Requirement Specification — Online Banking Portal
+
+1. Login Form
+FR-01 The login form must validate that the username field is a registered email address in a valid format.
+FR-02 The password field shall require a minimum length of 8 and a maximum length of 64 characters.
+FR-03 The system shall display the error "Invalid credentials" without revealing which field was wrong.
+
+2. Transfer API
+FR-10 The transfer API endpoint shall accept a JSON payload with source account, destination account, and amount.
+FR-11 The API must return HTTP 400 with a descriptive error body when the payload fails validation.
+FR-12 The API shall time out and roll back the transaction if the core banking service does not respond within 10 seconds.
+
+3. Statements
+FR-20 The system shall generate monthly account statements and email them on the first day of each month.
+FR-21 The user should be able to download statements for the last 24 months from the statements page.
+
+4. Notifications
+FR-30 The system must send an SMS alert for any debit transaction above 10000.
+FR-31 The user shall be able to enable or disable email notifications from the profile settings screen.

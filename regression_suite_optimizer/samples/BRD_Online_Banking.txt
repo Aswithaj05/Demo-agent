@@ -1,0 +1,23 @@
+Business Requirement Document — Online Banking Portal
+
+1. Authentication
+The system shall allow registered customers to log in using their username and password.
+The system must lock the account after 3 consecutive failed login attempts.
+The system shall support two-factor authentication via OTP sent to the registered mobile number.
+The user must be able to reset a forgotten password using a secure email link that expires in 30 minutes.
+
+2. Funds Transfer
+The system shall allow customers to transfer funds between their own accounts instantly.
+The system must validate that the transfer amount is between 1 and 50000 per transaction.
+The system shall reject transfers when the source account has insufficient balance and display a clear error message.
+The system must send an email notification after every successful transfer.
+
+3. Payments
+The system shall allow customers to pay registered billers using saved payment templates.
+The system must calculate and display any applicable transaction fee before the customer confirms a payment.
+The system shall generate a downloadable payment receipt in PDF format after each successful payment.
+
+4. Account Dashboard
+The system shall display the account balance and the last 10 transactions on the dashboard screen.
+The user should be able to search transactions by date range and amount.
+The dashboard must load within 3 seconds under normal network conditions.

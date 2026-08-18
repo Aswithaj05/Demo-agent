@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regression Test Suite Optimizer</title>
+<script>
+(function(){
+  var t = localStorage.getItem("rto-theme");
+  if(!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
+<style>
+:root{
+  --bg:#f4f6fa; --panel:#ffffff; --panel-2:#fbfcfe; --ink:#1a2333; --muted:#67748c;
+  --accent:#3b5bdb; --accent-2:#6a4cff; --accent-soft:#e7ecfd; --border:#e3e8f0;
+  --green:#2b8a3e; --green-soft:#e6f4ea; --amber:#e67700; --amber-soft:#fff4e0;
+  --red:#c92a2a; --red-soft:#ffe6e6; --purple:#6a4cff; --purple-soft:#efe9ff;
+  --radius:14px; --radius-sm:9px;
+  --shadow:0 1px 3px rgba(20,30,60,.07),0 8px 24px rgba(20,30,60,.06);
+  --shadow-lg:0 20px 60px rgba(20,30,60,.16);
+  --sidebar-w:230px;
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --panel:#161d2c; --panel-2:#1b2334; --ink:#e8ecf6; --muted:#8a95ad;
+  --accent:#6d8bff; --accent-2:#9d84ff; --accent-soft:#22284a; --border:#262f45;
+  --green:#4fce6e; --green-soft:#173622; --amber:#ffb454; --amber-soft:#3a2a10;
+  --red:#ff6b6b; --red-soft:#3a1c1c; --purple:#a996ff; --purple-soft:#241c47;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font:14px/1.5 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  transition:background .2s,color .2s}
+button,input,select{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:9px;height:9px} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+.app{display:flex;min-height:100vh}
+
+/* ---------- sidebar ---------- */
+.sidebar{width:var(--sidebar-w);flex:0 0 auto;background:var(--panel);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:20}
+.brand{display:flex;align-items:center;gap:11px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.brand .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:0 0 auto}
+.brand .t{font-weight:700;font-size:14px;line-height:1.25}
+.brand .s{font-size:10.5px;color:var(--muted)}
+.sidenav{list-style:none;padding:10px}
+.sidenav li{margin-bottom:2px}
+.sidenav button{width:100%;display:flex;align-items:center;gap:11px;border:0;background:none;color:var(--muted);
+  padding:9px 12px;border-radius:var(--radius-sm);font:600 12.5px "Segoe UI",sans-serif;cursor:pointer;text-align:left;
+  transition:.12s}
+.sidenav button svg{flex:0 0 auto;width:17px;height:17px}
+.sidenav button:hover{background:var(--accent-soft);color:var(--accent)}
+.sidenav button.active{background:var(--accent);color:#fff}
+.sidenav .grp{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:14px 12px 6px}
+.theme-toggle{display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--panel-2);
+  border-radius:99px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted)}
+.theme-toggle svg{width:15px;height:15px}
+
+/* ---------- main / topbar ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 26px;display:flex;
+  align-items:center;gap:14px;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.topbar h1{font-size:16px;font-weight:700}
+.badge{padding:5px 12px;border-radius:99px;font-size:11.5px;font-weight:700}
+.badge.ai{background:var(--green-soft);color:var(--green)}
+.badge.demo{background:var(--amber-soft);color:var(--amber)}
+.topbar .spacer{flex:1}
+main.content{max-width:1240px;width:100%;margin:0 auto;padding:24px 26px 60px}
+.view{display:none}.view.active{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ---------- primitives ---------- */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:20px;margin-bottom:18px;transition:.15s}
+.card h2{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px 18px;transition:.15s;position:relative;overflow:hidden}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stat .ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.stat .ic svg{width:16px;height:16px}
+.stat .n{font-size:25px;font-weight:800;letter-spacing:-.02em}
+.stat .l{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
+.stat .trend{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px}
+.ic.blue{background:var(--accent-soft);color:var(--accent)} .ic.green{background:var(--green-soft);color:var(--green)}
+.ic.amber{background:var(--amber-soft);color:var(--amber)} .ic.red{background:var(--red-soft);color:var(--red)}
+.ic.purple{background:var(--purple-soft);color:var(--purple)}
+
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 16px;font:700 12.5px "Segoe UI",sans-serif;
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.12s}
+button.btn svg{width:14px;height:14px}
+button.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+button.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+button.btn.ghost{background:var(--accent-soft);color:var(--accent)}
+button.btn.danger{background:var(--red-soft);color:var(--red)}
+button.btn.sm{padding:6px 12px;font-size:11.5px}
+input[type=text],select{border:1px solid var(--border);border-radius:9px;padding:8px 11px;font:13px "Segoe UI",sans-serif;
+  background:var(--panel-2);color:var(--ink)}
+input[type=text]:focus,select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:9px 10px;
+  border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+tr.click:hover{background:var(--accent-soft)}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.pill.High{background:var(--red-soft);color:var(--red)}
+.pill.Medium{background:var(--amber-soft);color:var(--amber)}
+.pill.Low{background:var(--green-soft);color:var(--green)}
+.pill.Critical{background:var(--red-soft);color:var(--red)}
+.pill.cat{background:var(--accent-soft);color:var(--accent)}
+.pill.mod{background:var(--panel-2);color:var(--muted);border:1px solid var(--border)}
+.pill.ok{background:var(--green-soft);color:var(--green)}
+.pill.gap{background:var(--red-soft);color:var(--red)}
+.drop{border:2px dashed var(--border);border-radius:var(--radius);padding:38px;text-align:center;color:var(--muted);
+  transition:.15s;cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.drop b{color:var(--ink)}
+.filelist{margin-top:14px}
+.file{padding:11px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;background:var(--panel-2)}
+.file .head{display:flex;align-items:center;gap:10px}
+.file .nm{font-weight:700}
+.file .meta{color:var(--muted);font-size:12px}
+.file .st{margin-left:auto;font-size:12px;font-weight:700}
+.file .st.ok{color:var(--green)} .file .st.err{color:var(--red)}
+.file .docmeta{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.file .docmeta .k{font-size:10.5px;text-transform:uppercase;color:var(--muted);letter-spacing:.03em}
+.file .docmeta .v{font-size:13px;font-weight:700;margin-top:1px}
+.progress{height:7px;background:var(--border);border-radius:99px;overflow:hidden;margin:12px 0}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0;
+  transition:width .35s;border-radius:99px}
+.steps{list-style:none;margin-top:10px}
+.steps li{padding:7px 0;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:9px}
+.steps li .dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:9px;transition:.15s}
+.steps li.done{color:var(--ink)} .steps li.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+.steps li.run{color:var(--accent);font-weight:700} .steps li.run .dot{border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px;font-size:13px;color:var(--muted)}
+.pager button{border:1px solid var(--border);background:var(--panel-2);border-radius:7px;padding:5px 11px;cursor:pointer}
+.pager button[disabled]{opacity:.4;cursor:not-allowed}
+.covbar{height:9px;background:var(--border);border-radius:99px;overflow:hidden;flex:1}
+.covbar i{display:block;height:100%;background:var(--green);border-radius:99px}
+.alert{padding:10px 13px;border-radius:var(--radius-sm);background:var(--amber-soft);color:var(--amber);font-size:13px;
+  margin-bottom:7px;display:flex;gap:8px;align-items:flex-start}
+.empty{text-align:center;color:var(--muted);padding:34px 0;font-size:13px}
+dialog{border:0;border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:0;max-width:700px;width:92%;
+  background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(15,23,42,.5)}
+.modal-h{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center}
+.modal-h h3{font-size:15px}
+.modal-h button{margin-left:auto;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
+.modal-b{padding:18px 22px;max-height:66vh;overflow:auto}
+.field{margin-bottom:12px}
+.field .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.field .v{margin-top:3px;white-space:pre-wrap}
+.mut{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ---------- hero ---------- */
+.hero{background:linear-gradient(120deg,var(--accent) 0%,var(--accent-2) 100%);border-radius:var(--radius);
+  padding:32px 30px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.hero .kicker{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);padding:5px 12px;
+  border-radius:99px;font-size:11.5px;font-weight:700;margin-bottom:14px}
+.hero h1{font-size:26px;font-weight:800;margin-bottom:8px;max-width:640px}
+.hero p{opacity:.92;max-width:560px;margin-bottom:18px;font-size:13.5px}
+.hero .actions{display:flex;gap:10px;flex-wrap:wrap}
+.hero button.btn{background:#fff;color:var(--accent)}
+.hero button.btn.ghost2{background:rgba(255,255,255,.16);color:#fff}
+
+/* ---------- project cards ---------- */
+.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pcard{border:1px solid var(--border);border-radius:var(--radius);padding:16px;background:var(--panel-2);
+  display:flex;flex-direction:column;gap:9px;transition:.15s}
+.pcard:hover{border-color:var(--accent);transform:translateY(-2px)}
+.pcard .nm{font-weight:700;font-size:14px}
+.pcard .meta{font-size:11.5px;color:var(--muted)}
+.pcard .kpis{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.pcard .kpis b{color:var(--ink);font-size:13px;display:block}
+.pcard .foot{display:flex;gap:8px;margin-top:4px}
+
+/* ---------- insights ---------- */
+.icards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.icard{border:1px solid var(--border);border-radius:var(--radius);padding:15px;background:var(--panel-2)}
+.icard .h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin-bottom:8px}
+.icard .h svg{width:16px;height:16px}
+.icard ul{list-style:none;font-size:12.5px;color:var(--muted)}
+.icard ul li{padding:3px 0;border-bottom:1px dashed var(--border)}
+.icard ul li:last-child{border-bottom:0}
+
+/* ---------- chat ---------- */
+.chat-fab{position:fixed;bottom:22px;right:22px;width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:0;cursor:pointer;
+  box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;z-index:60}
+.chat-fab svg{width:22px;height:22px}
+.chat-drawer{position:fixed;bottom:86px;right:22px;width:340px;max-width:90vw;height:440px;max-height:70vh;
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);
+  display:none;flex-direction:column;z-index:60;overflow:hidden}
+.chat-drawer.open{display:flex}
+.chat-h{padding:12px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;
+  align-items:center;gap:8px}
+.chat-h button{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px}
+.chat-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:12.5px;white-space:pre-wrap;line-height:1.45}
+.msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+.msg.bot{align-self:flex-start;background:var(--panel-2);border:1px solid var(--border);border-bottom-left-radius:3px}
+.chat-suggest{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px}
+.chat-suggest button{border:1px solid var(--border);background:var(--panel-2);border-radius:99px;padding:4px 10px;
+  font-size:11px;cursor:pointer;color:var(--muted)}
+.chat-suggest button:hover{color:var(--accent);border-color:var(--accent)}
+.chat-input{display:flex;border-top:1px solid var(--border);padding:10px}
+.chat-input input{flex:1;border:1px solid var(--border);border-radius:99px;padding:8px 13px;font-size:12.5px}
+.chat-input button{border:0;background:var(--accent);color:#fff;border-radius:99px;width:34px;height:34px;margin-left:8px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chat-input button svg{width:15px;height:15px}
+
+/* ---------- toasts ---------- */
+.toasts{position:fixed;bottom:22px;left:22px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.toast2{background:var(--panel);color:var(--ink);border:1px solid var(--border);border-left:4px solid var(--accent);
+  padding:11px 16px;border-radius:9px;font-size:12.5px;box-shadow:var(--shadow-lg);min-width:220px;max-width:320px;
+  animation:slidein .25s ease}
+.toast2.success{border-left-color:var(--green)} .toast2.error{border-left-color:var(--red)}
+.toast2.warning{border-left-color:var(--amber)}
+@keyframes slidein{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+
+/* ---------- charts ---------- */
+.chartbox{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.legend{list-style:none;font-size:12px}
+.legend li{display:flex;align-items:center;gap:7px;padding:3px 0}
+.legend .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+
+@media(max-width:760px){
+  .sidebar{position:fixed;left:-260px;transition:.2s;box-shadow:var(--shadow-lg)}
+  .sidebar.open{left:0}
+  main.content{padding:18px 14px 60px}
+  .topbar{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="logo">RO</div>
+    <div><div class="t">Regression Suite<br>Optimizer</div></div>
+  </div>
+  <ul class="sidenav">
+    <li><button data-view="dashboard" class="active"></button></li>
+    <li><button data-view="projects"></button></li>
+    <li><span class="grp">Workflow</span></li>
+    <li><button data-view="upload"></button></li>
+    <li><button data-view="analysis"></button></li>
+    <li><button data-view="cases"></button></li>
+    <li><button data-view="trace"></button></li>
+    <li><span class="grp">Insights</span></li>
+    <li><button data-view="reports"></button></li>
+    <li><button data-view="export"></button></li>
+    <li><span class="grp">General</span></li>
+    <li><button data-view="settings"></button></li>
+    <li><button data-view="help"></button></li>
+  </ul>
+</aside>
+
+<div class="main">
+<div class="topbar">
+  <h1 id="topTitle">Dashboard</h1>
+  <span id="modeBadge" class="badge demo">…</span>
+  <div class="spacer"></div>
+  <button class="theme-toggle" id="themeToggle"></button>
+  <select id="projectSelect" style="min-width:210px"></select>
+</div>
+
+<main class="content">
+
+<!-- ============ DASHBOARD ============ -->
+<section class="view active" id="view-dashboard">
+  <div class="hero">
+    <span class="kicker">&#9889; AI-powered regression engineering</span>
+    <h1>Turn requirement documents into a complete regression test suite.</h1>
+    <p>Upload a BRD/FRS and let Claude — or the built-in demo engine — identify every impacted module,
+       trace requirements to test cases, and export an enterprise-ready regression suite in minutes.</p>
+    <div class="actions">
+      <button class="btn" onclick="showView('upload')">Upload documents</button>
+      <button class="btn ghost2" onclick="showView('cases')">View test cases</button>
+      <button class="btn ghost2" onclick="showView('reports')">Open reports</button>
+    </div>
+  </div>
+
+  <div class="cards" id="dashStats"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Recent projects</h2>
+      <div id="recentProjects" class="pcards"><div class="empty">No projects yet — create one to get started.</div></div>
+    </div>
+    <div class="card">
+      <h2>Create a project</h2>
+      <div class="row" style="margin-bottom:12px">
+        <input type="text" id="newProjectName" placeholder="New project name…" style="flex:1">
+        <button class="btn" id="createProjectBtn">Create Project</button>
+      </div>
+      <h2 style="margin-top:6px">Export current suite</h2>
+      <div class="row">
+        <button class="btn ghost sm" onclick="exportSuite('xlsx')">Excel</button>
+        <button class="btn ghost sm" onclick="exportSuite('pdf')">PDF</button>
+        <button class="btn ghost sm" onclick="exportSuite('docx')">Word</button>
+        <button class="btn ghost sm" onclick="exportSuite('csv')">CSV</button>
+      </div>
+      <p class="mut" id="engineNote" style="margin-top:14px"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROJECTS ============ -->
+<section class="view" id="view-projects">
+  <div class="card">
+    <h2>All projects</h2>
+    <div class="row" style="margin-bottom:14px">
+      <input type="text" id="newProjectName2" placeholder="New project name…" style="flex:1">
+      <button class="btn" id="createProjectBtn2">Create Project</button>
+    </div>
+    <div id="allProjects" class="pcards"><div class="empty">No projects yet.</div></div>
+  </div>
+</section>
+
+<!-- ============ UPLOAD ============ -->
+<section class="view" id="view-upload">
+  <div class="card">
+    <h2>Upload requirement documents</h2>
+    <p class="mut" style="margin-bottom:12px">BRD, FRS, user stories, acceptance criteria, existing regression suite,
+       traceability matrix — <b>PDF, DOCX, XLSX, TXT</b> (max 100&nbsp;MB each).</p>
+    <div class="drop" id="dropzone">
+      <div style="font-size:30px">&#128196;</div>
+      <p><b>Drag &amp; drop files here</b> or click to browse</p>
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.xlsx,.txt" style="display:none">
+    </div>
+    <div class="progress" id="uploadProgress" style="display:none"><i></i></div>
+    <div class="filelist" id="fileList"></div>
+  </div>
+  <div class="card">
+    <div class="row">
+      <h2 style="margin:0">Ready for analysis?</h2>
+      <span class="mut" id="analyzeHint2" style="margin-left:auto"></span>
+      <button class="btn" onclick="showView('analysis')">Go to AI Analysis &rarr;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AI ANALYSIS ============ -->
+<section class="view" id="view-analysis">
+  <div class="card">
+    <h2>AI analysis</h2>
+    <div class="row">
+      <button class="btn" id="analyzeBtn">Analyze &amp; Generate Regression Suite</button>
+      <span class="mut" id="analyzeHint"></span>
+      <span class="mut" id="progressPct" style="margin-left:auto;font-weight:700"></span>
+    </div>
+    <div class="progress" id="analysisBar" style="display:none"><i></i></div>
+    <ul class="steps" id="analysisSteps" style="display:none">
+      <li data-s="1"><span class="dot"></span>Reading uploaded documents</li>
+      <li data-s="2"><span class="dot"></span>Parsing requirements</li>
+      <li data-s="3"><span class="dot"></span>Detecting modules &amp; business flows</li>
+      <li data-s="4"><span class="dot"></span>Identifying business rules</li>
+      <li data-s="5"><span class="dot"></span>Mapping dependencies</li>
+      <li data-s="6"><span class="dot"></span>Impact analysis</li>
+      <li data-s="7"><span class="dot"></span>Regression coverage analysis</li>
+      <li data-s="8"><span class="dot"></span>Generating regression test cases</li>
+      <li data-s="9"><span class="dot"></span>Creating traceability matrix</li>
+      <li data-s="10"><span class="dot"></span>Computing risk score</li>
+      <li data-s="11"><span class="dot"></span>Generating reports</li>
+    </ul>
+    <div id="modulesFound" style="display:none">
+      <p style="margin-top:14px;font-weight:600">Modules identified:</p>
+      <div class="chips" id="moduleChips"></div>
+    </div>
+  </div>
+
+  <div class="card" id="reqSummaryCard" style="display:none">
+    <h2>Requirement analysis summary</h2>
+    <div class="cards" id="reqSummaryStats"></div>
+  </div>
+
+  <div class="card" id="impactCard" style="display:none">
+    <h2>Impact analysis</h2>
+    <div id="impactBody"></div>
+  </div>
+
+  <div class="card" id="insightsCard" style="display:none">
+    <h2>AI insights</h2>
+    <div class="icards" id="insightsBody"></div>
+  </div>
+
+  <div class="card" id="assumptionsCard" style="display:none">
+    <h2>Assumptions</h2>
+    <p class="mut" style="margin-bottom:10px">Requirements that were vague or underspecified — assumptions made here are kept separate from the generated test cases.</p>
+    <div id="assumptionsBody"></div>
+  </div>
+</section>
+
+<!-- ============ TEST CASES ============ -->
+<section class="view" id="view-cases">
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <input type="text" id="searchBox" placeholder="Search ID / requirement / module / keyword…" style="flex:1;min-width:220px">
+      <select id="fModule"><option value="">All modules</option></select>
+      <select id="fPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <select id="fCategory"><option value="">All test types</option></select>
+      <select id="fReq"><option value="">All requirements</option></select>
+      <select id="fStatus"><option value="">All statuses</option><option value="Covered">Covered</option><option value="Gap">Gap</option><option value="N/A">Cross-module</option></select>
+      <select id="fRule"><option value="">All test cases</option><option value="yes">Business-rule-linked</option></select>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <span class="mut" id="selectionInfo">0 selected</span>
+      <button class="btn ghost sm" id="exportSelectedBtn">Export selected (CSV)</button>
+      <span class="mut" id="pageInfo" style="margin-left:auto"></span>
+    </div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th style="cursor:default"><input type="checkbox" id="selectAllBox"></th>
+        <th data-k="id">ID</th><th data-k="module">Module</th><th data-k="requirement_ref">Req</th>
+        <th data-k="scenario">Scenario</th><th data-k="priority">Priority</th><th data-k="severity">Severity</th>
+        <th data-k="category">Test Type</th><th data-k="automation_candidate">Automation</th>
+        <th style="cursor:default">Status</th>
+      </tr></thead>
+      <tbody id="caseRows"></tbody>
+    </table>
+    </div>
+    <div class="pager">
+      <button id="prevPage">&#8249; Prev</button>
+      <button id="nextPage">Next &#8250;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRACEABILITY ============ -->
+<section class="view" id="view-trace">
+  <div class="card">
+    <h2>Requirement &rarr; Test traceability</h2>
+    <div class="row" style="margin-bottom:14px">
+      <span style="font-weight:600">Coverage:</span>
+      <div class="covbar"><i id="covFill"></i></div>
+      <span id="covPct" style="font-weight:700"></span>
+    </div>
+    <p class="mut" style="margin-bottom:10px">Click any requirement row to view its linked test cases.</p>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Requirement</th><th>Module</th><th>Source</th><th>Test cases</th><th>Coverage %</th><th>Status</th></tr></thead>
+      <tbody id="traceRows"></tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REPORTS ============ -->
+<section class="view" id="view-reports">
+  <div class="cards" id="reportStats"></div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Priority distribution</h2>
+      <div class="chartbox" id="chartPriority"></div>
+    </div>
+    <div class="card">
+      <h2>Requirement status</h2>
+      <div class="chartbox" id="chartStatus"></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Module-wise coverage</h2>
+      <div id="chartModules"></div>
+    </div>
+    <div class="card">
+      <h2>Regression category distribution</h2>
+      <div id="chartCategories"></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Module-wise coverage table</h2>
+      <table><thead><tr><th>Module</th><th>Reqs</th><th>Tests</th><th>Coverage</th></tr></thead>
+      <tbody id="moduleRows"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Regression categories</h2>
+      <table><thead><tr><th>Category</th><th>Count</th></tr></thead><tbody id="catRows"></tbody></table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Missing / thin coverage alerts</h2>
+    <div id="alerts"><div class="empty">No alerts.</div></div>
+  </div>
+</section>
+
+<!-- ============ EXPORT CENTER ============ -->
+<section class="view" id="view-export">
+  <div class="card">
+    <h2>Regression suite exports</h2>
+    <p class="mut" style="margin-bottom:14px">The complete generated test suite, in your preferred format.</p>
+    <div class="grid3">
+      <button class="btn" onclick="exportSuite('xlsx')">Export to Excel</button>
+      <button class="btn" onclick="exportSuite('pdf')">Export to PDF</button>
+      <button class="btn" onclick="exportSuite('docx')">Export to Word</button>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn" onclick="exportSuite('csv')">Export to CSV</button></div>
+  </div>
+  <div class="card">
+    <h2>Report exports</h2>
+    <p class="mut" style="margin-bottom:14px">Focused reports for stakeholders and release sign-off.</p>
+    <div class="grid3">
+      <button class="btn ghost" onclick="exportReport('traceability')">Traceability Matrix (CSV)</button>
+      <button class="btn ghost" onclick="exportReport('coverage')">Coverage Report (PDF)</button>
+      <button class="btn ghost" onclick="exportReport('impact')">Impact Analysis Report (PDF)</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn ghost" onclick="exportReport('summary')">Regression Summary (PDF)</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="view" id="view-settings">
+  <div class="card">
+    <h2>Appearance</h2>
+    <div class="row"><span class="mut">Theme:</span><button class="btn ghost sm" id="themeToggle2"></button></div>
+  </div>
+  <div class="card">
+    <h2>Engine</h2>
+    <p class="mut" id="settingsEngineNote"></p>
+  </div>
+</section>
+
+<!-- ============ HELP ============ -->
+<section class="view" id="view-help">
+  <div class="card">
+    <h2>How it works</h2>
+    <ol style="margin-left:18px;color:var(--muted);font-size:13px;line-height:2">
+      <li>Create a project, then upload a BRD/FRS (and optionally user stories, acceptance criteria, or an existing suite).</li>
+      <li>Run AI Analysis — the app extracts requirements, classifies Functional/Non-Functional items, detects modules and business rules.</li>
+      <li>Review generated regression test cases, traceability, coverage, risk score, and AI insights.</li>
+      <li>Export the suite (Excel/PDF/Word/CSV) or a focused report (traceability, coverage, impact, summary).</li>
+      <li>Re-run analysis after updating documents to see an impact analysis against the previous version.</li>
+      <li>Use the chat assistant (bottom-right) to ask about specific test cases, business rules, or coverage gaps.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>Modes</h2>
+    <p class="mut">Set <code>ANTHROPIC_API_KEY</code> and restart the app to enable Claude-powered analysis and chat.
+       Without a key, a deterministic rule-based engine runs fully offline.</p>
+  </div>
+</section>
+
+</main>
+</div>
+</div>
+
+<dialog id="tcModal">
+  <div class="modal-h"><h3 id="tcTitle"></h3><button onclick="tcModal.close()">&times;</button></div>
+  <div class="modal-b" id="tcBody"></div>
+</dialog>
+
+<div class="toasts" id="toasts"></div>
+
+<button class="chat-fab" id="chatFab" title="Ask the AI assistant"></button>
+<div class="chat-drawer" id="chatDrawer">
+  <div class="chat-h"><span></span>AI Assistant<button id="chatClose">&times;</button></div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-suggest" id="chatSuggest"></div>
+  <div class="chat-input">
+    <input type="text" id="chatInput" placeholder="Ask about this project…">
+    <button id="chatSend"></button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+
+/* ---------- icons ---------- */
+const ICONS = {
+  dashboard:'<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>',
+  projects:'<path d="M3 7l3-4h5l1 2h9v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/>',
+  analysis:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  cases:'<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/>',
+  trace:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 7l8 10"/>',
+  reports:'<path d="M4 20V10M11 20V4M18 20v-7"/>',
+  export:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 20h16"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 4.6 2.5c-.9.6-1.7 1.1-1.7 2.5"/><path d="M12 17.5h.01"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+  chat:'<path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4A8.9 8.9 0 0 1 8 19L3 20l1.3-4A8.4 8.4 0 0 1 3.6 11 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/>',
+  send:'<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+  warn:'<path d="M12 3l10 18H2z"/><path d="M12 9v5M12 17h.01"/>',
+  risk:'<path d="M12 2v6M12 22v-6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6M4.9 19.1l4.2-4.2M14.9 9.1l4.2-4.2"/>',
+  bug:'<path d="M9 9V7a3 3 0 1 1 6 0v2"/><path d="M6 12h12M6 8l-2-2M18 8l2-2M6 16l-2 2M18 16l2 2"/><rect x="7" y="9" width="10" height="10" rx="4"/>',
+  gap:'<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
+  spark:'<path d="M12 3l1.8 4.9L19 9l-5.2 1.9L12 16l-1.8-5.1L5 9l5.2-1.1z"/>',
+};
+function icon(name,extra){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+  stroke-linecap="round" stroke-linejoin="round" ${extra||""}>${ICONS[name]||""}</svg>`; }
+
+const NAV = [
+  ["dashboard","Dashboard"],["projects","Projects"],["upload","Upload Documents"],
+  ["analysis","AI Analysis"],["cases","Regression Test Cases"],["trace","Traceability"],
+  ["reports","Reports"],["export","Export"],["settings","Settings"],["help","Help"],
+];
+document.querySelectorAll(".sidenav button[data-view]").forEach(btn=>{
+  const entry = NAV.find(n=>n[0]===btn.dataset.view);
+  btn.innerHTML = icon(entry[0]) + "<span>"+entry[1]+"</span>";
+  btn.onclick = ()=>showView(btn.dataset.view);
+});
+
+let state = { projects:[], current:null, cases:[], reqs:[], report:null,
+              filter:{q:"",module:"",priority:"",category:"",req:"",status:"",rule:""},
+              sort:{key:"id",dir:1}, page:1, perPage:25, dupes:0, engine:"",
+              selected:new Set(), chatHistory:[] };
+
+/* ---------- toasts ---------- */
+function toast(msg, type){
+  type = type || "info";
+  const el = document.createElement("div");
+  el.className = "toast2 " + type;
+  el.textContent = msg;
+  $("toasts").appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transition=".3s"; setTimeout(()=>el.remove(),300); }, 3600);
+}
+
+async function api(path, opts){
+  const res = await fetch(path, opts);
+  if(!res.ok){ let d="Request failed"; try{ d=(await res.json()).detail||d }catch(e){}
+    throw new Error(d); }
+  return res.json();
+}
+
+/* ---------- navigation ---------- */
+const VIEW_TITLES = Object.fromEntries(NAV);
+function showView(name){
+  document.querySelectorAll(".sidenav button[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===name));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));
+  $("topTitle").textContent = VIEW_TITLES[name] || "";
+  $("sidebar").classList.remove("open");
+}
+
+/* ---------- theme ---------- */
+function applyThemeButtons(){
+  const dark = document.documentElement.getAttribute("data-theme")==="dark";
+  const label = dark ? "Light mode" : "Dark mode";
+  const ic = icon(dark?"sun":"moon");
+  $("themeToggle").innerHTML = ic + "<span>"+label+"</span>";
+  $("themeToggle2").innerHTML = ic + "<span>"+label+"</span>";
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur==="dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("rto-theme", next);
+  applyThemeButtons();
+  renderAll();
+}
+$("themeToggle").onclick = toggleTheme;
+$("themeToggle2").onclick = toggleTheme;
+applyThemeButtons();
+
+/* ---------- status + projects ---------- */
+async function loadStatus(){
+  const s = await api("/api/status");
+  const b = $("modeBadge");
+  if(s.mode==="ai"){ b.textContent="AI mode · Claude"; b.className="badge ai"; }
+  else { b.textContent="Demo mode · no API key"; b.className="badge demo"; }
+  const note = s.mode==="ai" ? "Analysis engine: Claude ("+s.model+")."
+    : "Running in demo mode with the built-in rule-based engine. Set ANTHROPIC_API_KEY and restart to enable Claude AI analysis and chat.";
+  $("engineNote").textContent = note;
+  $("settingsEngineNote").textContent = note;
+}
+
+function riskPill(risk){
+  risk = risk || {score:0, level:"n/a"};
+  if(risk.level==="n/a") return `<span class="pill mod">N/A</span>`;
+  const cls = risk.level==="Critical"?"High":risk.level==="High"?"High":risk.level==="Medium"?"Medium":"Low";
+  return `<span class="pill ${cls}">${esc(risk.level)} (${risk.score})</span>`;
+}
+
+function projectCard(p){
+  return `<div class="pcard">
+    <div class="nm">${esc(p.name)}</div>
+    <div class="meta">${p.created} · ${p.files.length} document(s)</div>
+    <div class="kpis">
+      <div><b>${p.requirements}</b>Requirements</div>
+      <div><b>${p.test_cases}</b>Test cases</div>
+      <div><b>${p.coverage_percent||0}%</b>Coverage</div>
+      <div>${riskPill(p.risk)}</div>
+    </div>
+    <div class="foot">
+      <button class="btn ghost sm" onclick="pickProject('${p.id}')">Open</button>
+      <button class="btn danger sm" onclick="deleteProjectId('${p.id}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+function clearProjectState(){
+  state.current = null;
+  state.cases = [];
+  state.reqs = [];
+  state.report = null;
+  state.engine = "";
+  state.dupes = 0;
+  state.selected = new Set();
+  state.page = 1;
+  $("fileList").innerHTML = "";
+  $("analyzeHint").textContent = "Upload documents to enable analysis.";
+  $("analyzeHint2").textContent = "Upload documents to enable analysis.";
+  $("analyzeBtn").disabled = true;
+}
+
+async function loadProjects(keepId){
+  state.projects = await api("/api/projects");
+  const sel = $("projectSelect");
+  sel.innerHTML = state.projects.length
+    ? state.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("")
+    : `<option value="">— no projects —</option>`;
+  const target = keepId && state.projects.find(p=>p.id===keepId) ? keepId
+               : (state.projects[0]?.id || null);
+  if(target){ sel.value = target; await selectProject(target); }
+  else { clearProjectState(); renderAll(); }
+  const cardsHtml = state.projects.length ? state.projects.map(projectCard).join("")
+    : `<div class="empty">No projects yet — create one to get started.</div>`;
+  $("recentProjects").innerHTML = state.projects.slice(0,6).map(projectCard).join("") || cardsHtml;
+  $("allProjects").innerHTML = cardsHtml;
+}
+
+async function pickProject(id){ $("projectSelect").value=id; await selectProject(id); }
+async function deleteProjectId(id){
+  const p = state.projects.find(x=>x.id===id); if(!p) return;
+  if(!confirm(`Delete project "${p.name}" and all its generated test cases?`)) return;
+  await api("/api/projects/"+id,{method:"DELETE"});
+  await loadProjects(); toast("Project deleted","success");
+}
+
+async function selectProject(id){
+  const detail = await api("/api/projects/"+id);
+  state.current = detail;
+  state.dupes = detail.duplicates_skipped||0;
+  state.selected = new Set();
+  if(detail.analyzed){
+    const tc = await api(`/api/projects/${id}/testcases`);
+    state.cases = tc.test_cases; state.reqs = tc.requirements;
+    const r = await api(`/api/projects/${id}/report`);
+    state.report = r.report; state.engine = r.engine; state.dupes = r.duplicates_skipped;
+  } else { state.cases=[]; state.reqs=[]; state.report=null; state.engine=""; }
+  state.page=1; renderAll(); renderFiles(detail.file_details||[]);
+}
+
+$("projectSelect").onchange = e => e.target.value && selectProject(e.target.value);
+
+async function createProject(nameInputId){
+  const input = $(nameInputId);
+  const name = input.value.trim();
+  if(!name) return toast("Enter a project name first","warning");
+  try{
+    const p = await api("/api/projects",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name})});
+    input.value="";
+    await loadProjects(p.id);
+    toast("Project created","success");
+    showView("upload");
+  }catch(e){ toast(e.message,"error"); }
+}
+$("createProjectBtn").onclick = ()=>createProject("newProjectName");
+$("createProjectBtn2").onclick = ()=>createProject("newProjectName2");
+
+/* ---------- upload ---------- */
+const dz = $("dropzone");
+dz.onclick = ()=>$("fileInput").click();
+dz.ondragover = e=>{e.preventDefault(); dz.classList.add("over");};
+dz.ondragleave = ()=>dz.classList.remove("over");
+dz.ondrop = e=>{e.preventDefault(); dz.classList.remove("over"); handleFiles(e.dataTransfer.files);};
+$("fileInput").onchange = e=>handleFiles(e.target.files);
+
+function readAsBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result.split(",")[1]);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function handleFiles(fileList){
+  if(!state.current) return toast("Create/select a project first (Dashboard tab)","warning");
+  const files=[...fileList];
+  if(!files.length) return;
+  const bar=$("uploadProgress"); bar.style.display="block";
+  const fill=bar.querySelector("i");
+  const payload=[];
+  toast("Upload started…");
+  for(let i=0;i<files.length;i++){
+    fill.style.width = Math.round(100*(i+0.5)/files.length)+"%";
+    payload.push({name:files[i].name, content_base64:await readAsBase64(files[i]),
+                  doc_type:"Requirement Document"});
+  }
+  try{
+    const res = await api(`/api/projects/${state.current.id}/upload`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({files:payload})});
+    fill.style.width="100%";
+    const bad = res.results.filter(r=>!r.ok);
+    toast(bad.length? `${bad.length} file(s) rejected — see list` : "Upload complete", bad.length?"warning":"success");
+    await selectProject(state.current.id);
+    await loadProjects(state.current.id);
+    res.results.forEach(r=>{ if(!r.ok) markFileError(r.name,r.error); });
+  }catch(e){ toast(e.message,"error"); }
+  setTimeout(()=>{bar.style.display="none";fill.style.width="0";},800);
+}
+
+function renderFiles(files){
+  $("fileList").innerHTML = files.map(f=>`
+    <div class="file">
+      <div class="head">
+        <span>&#128462;</span>
+        <div><div class="nm">${esc(f.name)}</div>
+        <div class="meta">${f.doc_type} · ${f.chars.toLocaleString()} characters extracted</div></div>
+        <button class="btn ghost sm" style="margin-left:auto" onclick='previewFile(${JSON.stringify(f.name)})'>Preview</button>
+        <span class="st ok">Parsed &#10003;</span>
+      </div>
+      <div class="docmeta">
+        <div><div class="k">Uploaded</div><div class="v">${esc(f.uploaded_at||"—")}</div></div>
+        <div><div class="k">Est. pages</div><div class="v">${f.pages_estimate||1}</div></div>
+        <div><div class="k">Requirements found</div><div class="v">${f.requirements_found||0}</div></div>
+        <div><div class="k">Modules found</div><div class="v">${(f.modules_found||[]).length}</div></div>
+        <div><div class="k">Business rules found</div><div class="v">${f.business_rules_found||0}</div></div>
+      </div>
+    </div>`).join("");
+  const hint = files.length ? `${files.length} document(s) ready.` : "Upload documents to enable analysis.";
+  $("analyzeHint").textContent = hint;
+  $("analyzeHint2").textContent = hint;
+  $("analyzeBtn").disabled = !files.length;
+}
+
+function markFileError(name,err){
+  $("fileList").insertAdjacentHTML("beforeend",
+    `<div class="file"><div class="head"><span>&#9888;</span><div><div class="nm">${esc(name)}</div>
+     <div class="meta">${esc(err)}</div></div><span class="st err">Rejected</span></div></div>`);
+}
+
+function previewFile(name){
+  const f=(state.current.file_details||[]).find(x=>x.name===name);
+  if(!f) return;
+  $("tcTitle").textContent="Preview — "+name;
+  $("tcBody").innerHTML=`<div class="field"><div class="k">Extracted text (first 1,200 chars)</div>
+    <div class="v">${esc(f.preview)}</div></div>`;
+  tcModal.showModal();
+}
+
+/* ---------- analyze ---------- */
+$("analyzeBtn").onclick = async ()=>{
+  if(!state.current) return;
+  showView("analysis");
+  const steps=$("analysisSteps"); steps.style.display="block";
+  $("modulesFound").style.display="none";
+  $("reqSummaryCard").style.display="none";
+  $("impactCard").style.display="none";
+  $("insightsCard").style.display="none";
+  const bar=$("analysisBar"); bar.style.display="block";
+  const fill=bar.querySelector("i");
+  const items=[...steps.children];
+  items.forEach(li=>li.className="");
+  let i=0;
+  const setPct = p=>{ fill.style.width=p+"%"; $("progressPct").textContent=p+"%"; };
+  setPct(0);
+  const tick=setInterval(()=>{
+    if(i<items.length-1){ items[i].className="done"; items[++i].className="run"; setPct(Math.round(100*i/items.length)); }
+  },500);
+  items[0].className="run";
+  $("analyzeBtn").disabled=true;
+  toast("Analysis started…");
+  try{
+    const res = await api(`/api/projects/${state.current.id}/analyze`,{method:"POST"});
+    clearInterval(tick);
+    items.forEach(li=>li.className="done");
+    setPct(100);
+    $("moduleChips").innerHTML = res.modules.map(m=>`<span class="pill mod">${esc(m)}</span>`).join("");
+    $("modulesFound").style.display="block";
+    await selectProject(state.current.id);
+    await loadProjects(state.current.id);
+    renderReqSummary(res.report, res.risk);
+    renderImpact(res.impact);
+    renderInsights(res.insights);
+    renderAssumptions(res.assumptions);
+    toast(`Generated ${res.report.total_test_cases} test cases (${res.engine} engine)`,"success");
+  }catch(e){ clearInterval(tick); items.forEach(li=>li.className=""); toast(e.message,"error"); }
+  $("analyzeBtn").disabled=false;
+};
+
+function renderReqSummary(report, risk){
+  const real = [
+    ["Total requirements", report.total_requirements, "blue","spark"],
+    ["Functional", report.functional_count, "green","cases"],
+    ["Non-Functional", report.non_functional_count, "amber","gap"],
+    ["Modules identified", Object.keys(report.modules).filter(m=>!m.includes(" + ")&&m!=="End-to-End").length, "purple","trace"],
+    ["Business rules identified", (state.current.business_rules||[]).length, "blue","bug"],
+    ["Risk level", (risk&&risk.level)||"n/a", "red","risk"],
+  ];
+  $("reqSummaryStats").innerHTML = real.map(([l,n,c,ic])=>`
+    <div class="stat"><div class="top"><div class="ic ${c}">${icon(ic)}</div></div>
+    <div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+  $("reqSummaryCard").style.display="block";
+}
+
+function renderImpact(impact){
+  const box = $("impactBody");
+  if(!impact){
+    box.innerHTML = `<div class="empty">This is the first analysis for this project — nothing to compare yet.
+      Re-run analysis after updating documents to see an impact diff here.</div>`;
+  } else {
+    box.innerHTML = `
+      <div class="cards" style="margin-bottom:6px">
+        <div class="stat"><div class="n">${impact.added.length}</div><div class="l">Requirements added</div></div>
+        <div class="stat"><div class="n">${impact.removed.length}</div><div class="l">Requirements removed</div></div>
+        <div class="stat"><div class="n">${impact.impacted_modules.length}</div><div class="l">Impacted modules</div></div>
+        <div class="stat"><div class="n">${impact.impacted_test_cases.length}</div><div class="l">Impacted test cases</div></div>
+        <div class="stat"><div class="n">${riskPill({level:impact.risk_level,score:""})}</div><div class="l">Regression risk</div></div>
+      </div>
+      <p style="margin:8px 0"><b>Recommended execution order:</b> ${impact.recommended_execution_order.join(", ")||"n/a"}</p>
+      ${impact.added.length?`<p class="mut" style="margin-top:8px"><b>Added:</b> ${impact.added.map(r=>esc(r.id)).join(", ")}</p>`:""}
+      ${impact.removed.length?`<p class="mut"><b>Removed:</b> ${impact.removed.map(r=>esc(r.id)).join(", ")}</p>`:""}
+    `;
+  }
+  $("impactCard").style.display="block";
+}
+
+function insightCard(title, iconName, colorClass, items, emptyText){
+  return `<div class="icard"><div class="h">${icon(iconName)}${title}</div>
+    <ul>${items.length? items.map(x=>`<li>${esc(x)}</li>`).join("") : `<li class="mut">${emptyText}</li>`}</ul></div>`;
+}
+
+function renderInsights(insights){
+  if(!insights){ $("insightsCard").style.display="none"; return; }
+  const gaps = (insights.requirement_gaps||[]).map(g=>`${g.id}: ${g.text}`);
+  const suggestions = (insights.suggested_additional_test_cases||[]).map(s=>`${s.id}: ${s.suggestion}`);
+  const conflicts = (insights.business_rule_conflicts||[]).map(c=>c.note);
+  $("insightsBody").innerHTML = [
+    insightCard("High-risk modules","risk","red", insights.high_risk_modules||[], "None identified."),
+    insightCard("Missing coverage","gap","amber", (insights.missing_coverage||[]).map(g=>`${g.id}: ${g.text}`), "All requirements covered."),
+    insightCard("Duplicate test cases avoided","bug","purple", insights.duplicate_test_cases||[], "No duplicates detected."),
+    insightCard("Recommended regression areas","spark","blue", insights.recommended_regression_areas||[], "None."),
+    insightCard("Suggested additional test cases","cases","green", suggestions, "Coverage looks solid."),
+    insightCard("Business rule conflicts","warn","amber", conflicts, "None detected."),
+  ].join("");
+  $("insightsCard").style.display="block";
+}
+
+function renderAssumptions(assumptions){
+  const box = $("assumptionsBody");
+  const list = assumptions || [];
+  if(!list.length){
+    box.innerHTML = `<div class="empty">No vague or underspecified requirements were flagged — no assumptions were needed.</div>`;
+  } else {
+    box.innerHTML = `<ul>${list.map(a=>`<li>${esc(a)}</li>`).join("")}</ul>`;
+  }
+  $("assumptionsCard").style.display="block";
+}
+
+/* ---------- test case table ---------- */
+["searchBox","fModule","fPriority","fCategory","fReq","fStatus","fRule"].forEach(id=>{
+  $(id).addEventListener("input",()=>{
+    state.filter={ q:$("searchBox").value.toLowerCase(), module:$("fModule").value,
+      priority:$("fPriority").value, category:$("fCategory").value, req:$("fReq").value,
+      status:$("fStatus").value, rule:$("fRule").value };
+    state.page=1; renderCases(); });
+});
+document.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{
+  const k=th.dataset.k;
+  state.sort = state.sort.key===k ? {key:k,dir:-state.sort.dir} : {key:k,dir:1};
+  renderCases();
+});
+$("prevPage").onclick=()=>{ if(state.page>1){state.page--; renderCases();} };
+$("nextPage").onclick=()=>{ state.page++; renderCases(); };
+$("selectAllBox").onchange = e=>{
+  filteredCases().forEach(tc=>{ if(e.target.checked) state.selected.add(tc.id); else state.selected.delete(tc.id); });
+  renderCases();
+};
+$("exportSelectedBtn").onclick = ()=>{
+  if(!state.selected.size) return toast("Select at least one test case first","warning");
+  const cols = ["id","module","requirement_ref","requirement_description","user_story_ref","scenario","test_objective","preconditions","test_data","expected_result","priority","severity","category","regression_impact","automation_candidate","traceability"];
+  const rows = state.cases.filter(tc=>state.selected.has(tc.id));
+  const csvEsc = v => `"${String(v??"").replace(/"/g,'""')}"`;
+  const lines = [cols.join(",")].concat(rows.map(tc=>cols.map(c=>csvEsc(Array.isArray(tc[c])?tc[c].join(" | "):tc[c])).join(",")));
+  const blob = new Blob([lines.join("\r\n")], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "selected_test_cases.csv";
+  a.click();
+  toast(`Exported ${rows.length} selected test case(s)`,"success");
+};
+
+function statusFor(tc){
+  if(tc.requirement_ref==="N/A") return "N/A";
+  const t = state.report && state.report.traceability.find(x=>x.requirement_id===tc.requirement_ref);
+  if(!t) return "N/A";
+  return t.covered ? "Covered" : "Gap";
+}
+function ruleLinked(tc){
+  return (state.current.business_rules||[]).some(r=>r.requirement_ref===tc.requirement_ref);
+}
+
+function filteredCases(){
+  const f=state.filter;
+  let rows = state.cases.filter(tc=>{
+    if(f.module && tc.module!==f.module) return false;
+    if(f.priority && tc.priority!==f.priority) return false;
+    if(f.category && tc.category!==f.category) return false;
+    if(f.req && tc.requirement_ref!==f.req) return false;
+    if(f.status && statusFor(tc)!==f.status) return false;
+    if(f.rule==="yes" && !ruleLinked(tc)) return false;
+    if(f.q){
+      const hay=(tc.id+" "+tc.module+" "+tc.requirement_ref+" "+tc.scenario+" "+tc.category).toLowerCase();
+      if(!hay.includes(f.q)) return false;
+    }
+    return true;
+  });
+  const {key,dir}=state.sort;
+  rows.sort((a,b)=> (a[key]>b[key]?1:a[key]<b[key]?-1:0)*dir );
+  return rows;
+}
+
+function renderCases(){
+  const rows=filteredCases();
+  const pages=Math.max(1,Math.ceil(rows.length/state.perPage));
+  state.page=Math.min(state.page,pages);
+  const slice=rows.slice((state.page-1)*state.perPage, state.page*state.perPage);
+  $("caseRows").innerHTML = slice.length ? slice.map(tc=>{
+    const st=statusFor(tc);
+    const stCls = st==="Covered"?"ok":st==="Gap"?"gap":"mod";
+    return `<tr class="click">
+      <td><input type="checkbox" ${state.selected.has(tc.id)?"checked":""} onchange="toggleSelect('${tc.id}',this.checked)"></td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'><b>${tc.id}</b></td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'><span class="pill mod">${esc(tc.module)}</span></td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'>${esc(tc.requirement_ref)}</td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'>${esc(tc.scenario)}</td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'><span class="pill ${tc.priority}">${tc.priority}</span></td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'><span class="pill ${tc.severity==='Critical'?'High':tc.severity}">${esc(tc.severity||"")}</span></td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'><span class="pill cat">${esc(tc.category)}</span></td>
+      <td onclick='openTC(${JSON.stringify(tc.id)})'>${esc(tc.automation_candidate||"")}</td>
+      <td><span class="pill ${stCls}">${st}</span></td>
+    </tr>`; }).join("")
+    : `<tr><td colspan="10"><div class="empty">No test cases${state.cases.length?" match the filters":" yet — run the analysis"}.</div></td></tr>`;
+  $("pageInfo").textContent = rows.length
+    ? `${rows.length} case(s) · page ${state.page}/${pages}` : "";
+  $("prevPage").disabled = state.page<=1;
+  $("nextPage").disabled = state.page>=pages;
+  $("selectionInfo").textContent = `${state.selected.size} selected`;
+}
+function toggleSelect(id, checked){
+  if(checked) state.selected.add(id); else state.selected.delete(id);
+  $("selectionInfo").textContent = `${state.selected.size} selected`;
+}
+
+function openTC(id){
+  const tc=state.cases.find(c=>c.id===id); if(!tc) return;
+  $("tcTitle").textContent = tc.id+" — "+tc.module;
+  const steps=(tc.steps||[]).map((s,i)=>`${i+1}. ${esc(s)}`).join("\n");
+  $("tcBody").innerHTML = [
+    ["Requirement ID",tc.requirement_ref],["Requirement Description",tc.requirement_description],
+    ["Test Scenario",tc.scenario],["Test Objective",tc.test_objective],
+    ["User Story Reference",tc.user_story_ref],["Preconditions",tc.preconditions],
+    ["Test Steps",steps],["Test Data",tc.test_data],["Expected Result",tc.expected_result],
+    ["Priority",tc.priority],["Severity",tc.severity],["Test Type",tc.category],
+    ["Regression Impact",tc.regression_impact],["Automation Candidate",tc.automation_candidate],
+    ["Traceability",tc.traceability],
+  ].map(([k,v])=>`<div class="field"><div class="k">${k}</div><div class="v">${k==="Test Steps"?v:esc(String(v??""))}</div></div>`).join("");
+  tcModal.showModal();
+}
+
+/* ---------- traceability + reports ---------- */
+function renderTrace(){
+  const r=state.report;
+  if(!r){ $("traceRows").innerHTML=`<tr><td colspan="6"><div class="empty">Run the analysis first.</div></td></tr>`;
+    $("covFill").style.width="0"; $("covPct").textContent=""; return; }
+  $("covFill").style.width=r.coverage_percent+"%";
+  $("covPct").textContent=r.coverage_percent+"%";
+  $("traceRows").innerHTML = r.traceability.map(t=>{
+    const pct = t.covered ? Math.min(100, t.test_case_ids.length*50) : 0;
+    return `<tr class="click" onclick='openTrace(${JSON.stringify(t.requirement_id)})'>
+    <td><b>${t.requirement_id}</b><div class="mut" style="max-width:380px">${esc(t.requirement)}</div></td>
+    <td><span class="pill mod">${esc(t.module)}</span></td>
+    <td class="mut">${esc(t.source)}</td>
+    <td>${t.test_case_ids.join(", ")||"—"}</td>
+    <td>${pct}%</td>
+    <td>${t.covered?'<span class="pill ok">Covered</span>':'<span class="pill gap">Gap</span>'}</td></tr>`;
+  }).join("");
+}
+
+function openTrace(reqId){
+  const t = state.report.traceability.find(x=>x.requirement_id===reqId); if(!t) return;
+  const linked = state.cases.filter(tc=>t.test_case_ids.includes(tc.id));
+  $("tcTitle").textContent = reqId+" — linked test cases";
+  $("tcBody").innerHTML = `<div class="field"><div class="k">Requirement</div><div class="v">${esc(t.requirement)}</div></div>` +
+    (linked.length ? linked.map(tc=>`
+      <div class="field" style="cursor:pointer" onclick='tcModal.close();setTimeout(()=>openTC(${JSON.stringify(tc.id)}),150)'>
+        <div class="k">${tc.id} <span class="pill ${tc.priority}">${tc.priority}</span></div>
+        <div class="v">${esc(tc.scenario)}</div>
+      </div>`).join("")
+    : `<div class="empty">No test cases generated for this requirement yet.</div>`);
+  tcModal.showModal();
+}
+
+function renderReports(){
+  const r=state.report;
+  const stats = [
+    ["Requirements analyzed", r?r.total_requirements:0, "blue","spark"],
+    ["Test cases generated", r?r.total_test_cases:0, "green","cases"],
+    ["Requirement coverage", (r?r.coverage_percent:0)+"%", "purple","trace"],
+    ["High-priority regression", r?r.priorities.High||0:0, "red","risk"],
+    ["Duplicates removed", state.dupes||0, "amber","bug"],
+    ["Overall risk", riskPill(state.current&&state.current.risk), "red","gap"],
+  ];
+  $("reportStats").innerHTML = stats.map(([l,n,c,ic])=>`
+    <div class="stat"><div class="top"><div class="ic ${c}">${icon(ic)}</div></div>
+    <div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+
+  $("moduleRows").innerHTML = r? Object.entries(r.modules).map(([m,s])=>{
+    const pct=s.requirements? Math.round(100*s.covered/s.requirements):100;
+    return `<tr><td>${esc(m)}</td><td>${s.requirements}</td><td>${s.test_cases}</td>
+      <td><div class="row"><div class="covbar" style="max-width:120px"><i style="width:${pct}%"></i></div>${pct}%</div></td></tr>`;
+  }).join("") : `<tr><td colspan="4"><div class="empty">No data yet.</div></td></tr>`;
+  $("catRows").innerHTML = r? Object.entries(r.categories).sort((a,b)=>b[1]-a[1])
+    .map(([c,n])=>`<tr><td><span class="pill cat">${esc(c)}</span></td><td>${n}</td></tr>`).join("")
+    : `<tr><td colspan="2"><div class="empty">No data yet.</div></td></tr>`;
+  $("alerts").innerHTML = r && r.alerts.length
+    ? r.alerts.map(a=>`<div class="alert">${icon("warn",'style="width:14px;height:14px;flex:0 0 auto"')} ${esc(a)}</div>`).join("")
+    : `<div class="empty">No alerts${r?" — all requirements have coverage.":""}</div>`;
+
+  const colors = {High:"var(--red)",Medium:"var(--amber)",Low:"var(--green)"};
+  $("chartPriority").innerHTML = r ? chartWithLegend(
+    Object.entries(r.priorities).map(([k,v])=>({label:k,value:v,color:colors[k]}))) : `<div class="empty">No data yet.</div>`;
+
+  const statusData = r ? [
+    {label:"Functional", value:r.functional_count, color:"var(--accent)"},
+    {label:"Non-Functional", value:r.non_functional_count, color:"var(--purple)"},
+  ] : [];
+  $("chartStatus").innerHTML = r ? chartWithLegend(statusData) : `<div class="empty">No data yet.</div>`;
+
+  $("chartModules").innerHTML = r ? hbar(Object.entries(r.modules).filter(([m])=>!m.includes(" + ")&&m!=="End-to-End")
+    .map(([m,s])=>({label:m, value:s.requirements?Math.round(100*s.covered/s.requirements):100, color:"var(--accent)"})))
+    : `<div class="empty">No data yet.</div>`;
+  $("chartCategories").innerHTML = r ? hbar(Object.entries(r.categories).sort((a,b)=>b[1]-a[1])
+    .map(([c,n])=>({label:c, value:n, color:"var(--purple)"})))
+    : `<div class="empty">No data yet.</div>`;
+}
+
+/* ---------- inline SVG charts ---------- */
+function donut(data, size){
+  size = size||140; const stroke=18;
+  const total = data.reduce((a,d)=>a+d.value,0) || 1;
+  const r = (size-stroke)/2, C = 2*Math.PI*r;
+  let offset=0, segs="";
+  data.forEach(d=>{
+    const dash = total? (d.value/total)*C : 0;
+    segs += `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${stroke}"
+      stroke-dasharray="${dash} ${C-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${size/2} ${size/2})"/>`;
+    offset += dash;
+  });
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${stroke}"/>
+    ${segs}
+    <text x="${size/2}" y="${size/2+5}" text-anchor="middle" font-size="18" font-weight="700" fill="var(--ink)">${total}</text>
+  </svg>`;
+}
+function chartWithLegend(data){
+  const legend = data.map(d=>`<li><span class="sw" style="background:${d.color}"></span>${esc(d.label)}: <b>&nbsp;${d.value}</b></li>`).join("");
+  return `${donut(data)}<ul class="legend">${legend}</ul>`;
+}
+function hbar(data){
+  if(!data.length) return `<div class="empty">No data yet.</div>`;
+  const width=420, barH=20, gap=12;
+  const max = Math.max(1,...data.map(d=>d.value));
+  const rows = data.map((d,i)=>{
+    const y = i*(barH+gap);
+    const w = Math.max(2, Math.round((width-140)*d.value/max));
+    return `<text x="0" y="${y+barH*0.68}" font-size="11" fill="var(--muted)">${esc(String(d.label).slice(0,20))}</text>
+            <rect x="130" y="${y}" width="${w}" height="${barH}" rx="5" fill="${d.color}"/>
+            <text x="${130+w+8}" y="${y+barH*0.68}" font-size="11" fill="var(--ink)" font-weight="700">${d.value}</text>`;
+  }).join("");
+  const h = data.length*(barH+gap);
+  return `<svg viewBox="0 0 ${width} ${h}" width="100%" height="${h}" style="max-width:100%">${rows}</svg>`;
+}
+
+function renderDashboard(){
+  const r=state.report;
+  const risk = (state.current && state.current.risk) || {score:0, level:"n/a"};
+  const modulesDetected = r ? Object.keys(r.modules).filter(m=>!m.includes(" + ")&&m!=="End-to-End").length : 0;
+  const stats = [
+    ["Requirements Analyzed", r?r.total_requirements:0, "blue","spark",null],
+    ["Test Cases Generated", r?r.total_test_cases:0, "green","cases",null],
+    ["Modules Detected", modulesDetected, "purple","trace",null],
+    ["Requirement Coverage", (r?r.coverage_percent:0)+"%", "blue","gap",null],
+    ["High Priority Test Cases", r?r.priorities.High||0:0, "red","risk",null],
+    ["Medium Priority Test Cases", r?r.priorities.Medium||0:0, "amber","risk",null],
+    ["Low Priority Test Cases", r?r.priorities.Low||0:0, "green","risk",null],
+    ["Regression Categories", r?Object.keys(r.categories).length:0, "purple","cases",null],
+    ["Business Rules Identified", (state.current&&state.current.business_rules||[]).length, "blue","bug",null],
+    ["Risk Score", risk.level==="n/a" ? "N/A" : risk.score+"/100 · "+risk.level, "red","risk",null],
+  ];
+  $("dashStats").innerHTML = stats.map(([l,n,c,ic])=>`
+    <div class="stat"><div class="top"><div class="ic ${c}">${icon(ic)}</div></div>
+    <div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+}
+
+function renderFilterOptions(){
+  const mods=[...new Set(state.cases.map(c=>c.module))].sort();
+  const cats=[...new Set(state.cases.map(c=>c.category))].sort();
+  const reqs=[...new Set(state.cases.map(c=>c.requirement_ref))].sort();
+  $("fModule").innerHTML=`<option value="">All modules</option>`+mods.map(m=>`<option>${esc(m)}</option>`).join("");
+  $("fCategory").innerHTML=`<option value="">All categories</option>`+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  $("fReq").innerHTML=`<option value="">All requirements</option>`+reqs.map(x=>`<option>${esc(x)}</option>`).join("");
+}
+
+function renderAll(){
+  renderDashboard(); renderFilterOptions(); renderCases(); renderTrace(); renderReports();
+  if(state.current){
+    renderReqSummary(state.report || {total_requirements:0,functional_count:0,non_functional_count:0,modules:{}}, state.current.risk);
+    renderImpact(state.current.impact);
+    renderInsights(state.current.insights);
+    renderAssumptions(state.current.assumptions);
+    if(!state.report){ $("reqSummaryCard").style.display="none"; $("impactCard").style.display="none"; $("insightsCard").style.display="none"; $("assumptionsCard").style.display="none"; }
+  } else {
+    $("reqSummaryCard").style.display="none"; $("impactCard").style.display="none"; $("insightsCard").style.display="none";
+  }
+}
+
+/* ---------- export ---------- */
+function exportSuite(fmt){
+  if(!state.current || !state.cases.length) return toast("Run the analysis first — nothing to export","warning");
+  window.location = `/api/projects/${state.current.id}/export/${fmt}`;
+  toast("Export started — check your downloads","success");
+}
+function exportReport(kind){
+  if(!state.current || !state.cases.length) return toast("Run the analysis first — nothing to export","warning");
+  window.location = `/api/projects/${state.current.id}/export-report/${kind}`;
+  toast("Export started — check your downloads","success");
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---------- chat assistant ---------- */
+const SUGGESTED_QUESTIONS = [
+  "Which modules are impacted?","Show all high-priority regression tests.",
+  "Recommend additional regression tests.","Any duplicate test cases?","What is the overall risk?",
+];
+function renderChatSuggest(){
+  $("chatSuggest").innerHTML = SUGGESTED_QUESTIONS.map(q=>`<button onclick='askChat(${JSON.stringify(q)})'>${esc(q)}</button>`).join("");
+}
+function addChatMsg(role, text){
+  const el = document.createElement("div");
+  el.className = "msg "+(role==="user"?"user":"bot");
+  el.textContent = text;
+  $("chatBody").appendChild(el);
+  $("chatBody").scrollTop = $("chatBody").scrollHeight;
+}
+async function askChat(question){
+  if(!question) return;
+  if(!state.current) { addChatMsg("bot","Select or create a project first."); return; }
+  addChatMsg("user", question);
+  $("chatInput").value="";
+  try{
+    const res = await api(`/api/projects/${state.current.id}/ask`,{method:"POST",
+      headers:{"Content-Type":"application/json"}, body:JSON.stringify({question})});
+    addChatMsg("bot", res.answer);
+  }catch(e){ addChatMsg("bot","Sorry — "+e.message); }
+}
+$("chatFab").innerHTML = icon("chat");
+$("chatFab").onclick = ()=>{
+  $("chatDrawer").classList.toggle("open");
+  if($("chatBody").children.length===0){
+    addChatMsg("bot","Hi! Ask me about impacted modules, high-priority tests, a specific TC-/BR- id, duplicates, or recommended coverage.");
+    renderChatSuggest();
+  }
+};
+$("chatClose").onclick = ()=>$("chatDrawer").classList.remove("open");
+$("chatSend").innerHTML = icon("send");
+$("chatSend").onclick = ()=>askChat($("chatInput").value.trim());
+$("chatInput").addEventListener("keydown", e=>{ if(e.key==="Enter") askChat($("chatInput").value.trim()); });
+
+const tcModal=$("tcModal");
+loadStatus(); loadProjects();
+</script>
+</body>
+</html>

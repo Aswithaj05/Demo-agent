@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "regression-optimizer",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["app.py"],
+      "cwd": "regression_suite_optimizer",
+      "port": 8756,
+      "autoPort": true
+    },
+    {
+      "name": "pdf-comparison",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["C:\\Users\\aswithaj\\Downloads\\PDF_Comparsion\\app.py"],
+      "port": 5000
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Regression Test Suite Optimizer",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/regression_suite_optimizer/app.py",
+      "cwd": "${workspaceFolder}/regression_suite_optimizer",
+      "console": "integratedTerminal"
+    }
+  ]
+}
